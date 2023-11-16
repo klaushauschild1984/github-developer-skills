@@ -6,7 +6,6 @@ import de.codecentric.github.developer.skills.service.FetchService;
 import java.time.LocalDateTime;
 import java.util.concurrent.Callable;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import picocli.CommandLine;
 

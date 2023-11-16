@@ -1,10 +1,6 @@
 package de.codecentric.github.developer.skills.commands;
 
-import de.codecentric.github.developer.skills.repository.LastUpdate;
-import de.codecentric.github.developer.skills.repository.LastUpdateRepository;
-import de.codecentric.github.developer.skills.service.FetchService;
 import de.codecentric.github.developer.skills.service.TruncateService;
-import java.time.LocalDateTime;
 import java.util.concurrent.Callable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

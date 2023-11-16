@@ -3,7 +3,6 @@ package de.codecentric.github.developer.skills.service;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
-import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.metamodel.Type;
 import javax.transaction.Transactional;
