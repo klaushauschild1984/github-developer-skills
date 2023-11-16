@@ -10,7 +10,7 @@ import de.codecentric.github.developer.skills.repository.SourceRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -19,13 +19,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-@RequiredArgsConstructor
 @Service
 public class FetchService {
 
     private final DeveloperRepository developerRepository;
     private final RepositoryRepository repositoryRepository;
     private final SourceRepository sourceRepository;
+    private final String token;
+
+    public FetchService(
+        final DeveloperRepository developerRepository,
+        final RepositoryRepository repositoryRepository,
+        final SourceRepository sourceRepository,
+        @Value("${commands.fetch.token}") final String token
+    ) {
+        this.developerRepository = developerRepository;
+        this.repositoryRepository = repositoryRepository;
+        this.sourceRepository = sourceRepository;
+        this.token = token;
+    }
 
     public void fetch(final String membersUrl) {
         final Map<String, List<WebDeveloper>> webDevelopers = fetchDevelopers(membersUrl);
@@ -105,7 +117,7 @@ public class FetchService {
 
     private <T> ResponseEntity<T> exchange(final String url, final ParameterizedTypeReference<T> typeReference) {
         final HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth("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");
+        headers.setBearerAuth(token);
         return new RestTemplate().exchange(url, HttpMethod.GET, new HttpEntity<>(null, headers), typeReference);
     }
 }
