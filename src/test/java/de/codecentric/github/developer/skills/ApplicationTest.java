@@ -25,6 +25,11 @@ class ApplicationTest {
     }
 
     @Test
+    void helpQuery() {
+        Application.main(new String[] { "help", "query" });
+    }
+
+    @Test
     void fetchWithoutUrl() {
         Application.main(new String[] { "fetch" });
     }
@@ -37,5 +42,20 @@ class ApplicationTest {
     @Test
     void truncate() {
         Application.main(new String[] { "truncate" });
+    }
+
+    @Test
+    void query() {
+        Application.main(new String[] { "query" });
+    }
+
+    @Test
+    void queryForSpecificDeveloper() {
+        Application.main(new String[] { "query", "-developer", "romanigk" });
+    }
+
+    @Test
+    void queryForSpecificLanguage() {
+        Application.main(new String[] { "query", "-language", "Java" });
     }
 }

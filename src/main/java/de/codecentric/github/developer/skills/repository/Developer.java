@@ -3,6 +3,7 @@ package de.codecentric.github.developer.skills.repository;
 import java.util.HashSet;
 import java.util.Set;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import lombok.Builder.Default;
@@ -19,7 +20,7 @@ public class Developer {
     @Id
     private String login;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @Default
     private Set<Repository> repositories = new HashSet<>();
 }

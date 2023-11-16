@@ -14,7 +14,10 @@ import picocli.CommandLine.Command;
 
 @RequiredArgsConstructor
 @Component
-@Command(name = "github-developer-skills", subcommands = { CommandLine.HelpCommand.class, Fetch.class, Truncate.class })
+@Command(
+    name = "github-developer-skills",
+    subcommands = { CommandLine.HelpCommand.class, Fetch.class, Truncate.class, Query.class }
+)
 public class GitHubDeveloperSkills implements Callable<Integer> {
 
     private final DeveloperRepository developerRepository;
