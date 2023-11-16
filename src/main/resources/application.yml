@@ -5,10 +5,11 @@ spring:
     url: jdbc:mysql://localhost:3306/github-developer-skills
     username: user
     password: password
+  jpa:
+    hibernate:
+      ddl-auto: update
 
 logging:
   level:
     root: ERROR
-    org.springframework.web: ERROR
-    com.howtodoinjava: DEBUG
-    org.hibernate: ERROR
+    org.springframework: ERROR

@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 class WebDeveloper {
 
     private String login;
+
     @JsonProperty("repos_url")
     private String repositoriesUrl;
 }

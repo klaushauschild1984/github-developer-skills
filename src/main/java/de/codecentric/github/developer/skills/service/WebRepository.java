@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 class WebRepository {
 
     private String name;
+
     @JsonProperty("languages_url")
     private String languages;
 }
