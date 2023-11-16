@@ -20,6 +20,11 @@ class ApplicationTest {
     }
 
     @Test
+    void helpTruncate() {
+        Application.main(new String[] { "help", "truncate" });
+    }
+
+    @Test
     void fetchWithoutUrl() {
         Application.main(new String[] { "fetch" });
     }
@@ -27,5 +32,10 @@ class ApplicationTest {
     @Test
     void fetch() {
         Application.main(new String[] { "fetch", "-url", "https://api.github.com/orgs/codecentric/members" });
+    }
+
+    @Test
+    void truncate() {
+        Application.main(new String[] { "truncate" });
     }
 }

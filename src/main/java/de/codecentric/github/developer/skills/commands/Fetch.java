@@ -12,7 +12,11 @@ import picocli.CommandLine;
 
 @RequiredArgsConstructor
 @Component
-@CommandLine.Command(name = "fetch", subcommands = { CommandLine.HelpCommand.class })
+@CommandLine.Command(
+    name = "fetch",
+    description = "Fetch developer and skill data and store in data base.",
+    subcommands = { CommandLine.HelpCommand.class }
+)
 class Fetch implements Callable<Integer> {
 
     @CommandLine.Option(names = "-url", description = "GitHub members url")
