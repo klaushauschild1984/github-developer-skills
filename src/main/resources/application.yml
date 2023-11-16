@@ -9,6 +9,10 @@ spring:
     hibernate:
       ddl-auto: update
 
+commands:
+  fetch:
+    token: XXX
+
 logging:
   level:
     root: ERROR
