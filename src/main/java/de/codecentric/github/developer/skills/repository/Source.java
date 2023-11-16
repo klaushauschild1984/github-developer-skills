@@ -1,7 +1,7 @@
 package de.codecentric.github.developer.skills.repository;
 
+import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
-import javax.persistence.Id;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -10,8 +10,10 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @SuperBuilder
 @Getter
-public class Repository {
+public class Source {
 
-    @Id
-    private String name;
+    @EmbeddedId
+    private SourceId source;
+
+    private long linesOfCode;
 }

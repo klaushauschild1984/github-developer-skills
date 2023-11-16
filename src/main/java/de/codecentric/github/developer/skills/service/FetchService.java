@@ -4,11 +4,16 @@ import de.codecentric.github.developer.skills.repository.Developer;
 import de.codecentric.github.developer.skills.repository.DeveloperRepository;
 import de.codecentric.github.developer.skills.repository.Repository;
 import de.codecentric.github.developer.skills.repository.RepositoryRepository;
+import de.codecentric.github.developer.skills.repository.Source;
+import de.codecentric.github.developer.skills.repository.SourceId;
+import de.codecentric.github.developer.skills.repository.SourceRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -20,65 +25,87 @@ public class FetchService {
 
     private final DeveloperRepository developerRepository;
     private final RepositoryRepository repositoryRepository;
+    private final SourceRepository sourceRepository;
 
     public void fetch(final String membersUrl) {
-        final ResponseEntity<List<WebDeveloper>> developersResponse = new RestTemplate()
-            .exchange(membersUrl, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
+        final Map<String, List<WebDeveloper>> webDevelopers = fetchDevelopers(membersUrl);
+        final List<Developer> developers = persistDevelopers(webDevelopers);
+        developers.forEach(developer -> {
+            fetchRepositories(developer, webDevelopers.get(developer.getLogin()).get(0).getRepositoriesUrl());
+        });
+    }
 
-        final List<Developer> developers = developersResponse
+    private Map<String, List<WebDeveloper>> fetchDevelopers(String membersUrl) {
+        final ResponseEntity<List<WebDeveloper>> developersResponse = exchange(
+            membersUrl,
+            new ParameterizedTypeReference<>() {}
+        );
+        return developersResponse.getBody().stream().collect(Collectors.groupingBy(WebDeveloper::getLogin));
+    }
+
+    private List<Developer> persistDevelopers(final Map<String, List<WebDeveloper>> webDevelopers) {
+        final List<Developer> developers = webDevelopers
+            .values()
+            .stream()
+            .map(developer -> Developer.builder().login(developer.get(0).getLogin()).build())
+            .collect(Collectors.toList());
+        return developerRepository.saveAll(developers);
+    }
+
+    private void fetchRepositories(final Developer developer, final String repositoriesUrl) {
+        final ResponseEntity<List<WebRepository>> repositoriesResponse = exchange(
+            repositoriesUrl,
+            new ParameterizedTypeReference<>() {}
+        );
+        final Map<String, List<WebRepository>> webRepositories = repositoriesResponse
             .getBody()
             .stream()
-            .map(webDeveloper -> Developer.builder().login(webDeveloper.getLogin()).build())
+            .collect(Collectors.groupingBy(WebRepository::getName));
+
+        final List<Repository> repositories = persistRepositories(webRepositories);
+        developer.getRepositories().addAll(repositories);
+        developerRepository.save(developer);
+
+        repositories.forEach(repository ->
+            fetchSources(repository, webRepositories.get(repository.getName()).get(0).getLanguages())
+        );
+    }
+
+    private List<Repository> persistRepositories(final Map<String, List<WebRepository>> webRepositories) {
+        final List<Repository> repositories = webRepositories
+            .values()
+            .stream()
+            .map(webRepository -> Repository.builder().name(webRepository.get(0).getName()).build())
             .collect(Collectors.toList());
-        developerRepository.saveAll(developers);
+        return repositoryRepository.saveAll(repositories);
+    }
 
-        developersResponse
-            .getBody()
-            .forEach(webDeveloper -> {
-                final ResponseEntity<List<WebRepository>> repositoriesResponse = new RestTemplate()
-                    .exchange(
-                        webDeveloper.getRepositoriesUrl(),
-                        HttpMethod.GET,
-                        null,
-                        new ParameterizedTypeReference<>() {}
-                    );
+    private void fetchSources(final Repository repository, final String languagesUrl) {
+        final ResponseEntity<Map<String, Long>> sourcesResponse = exchange(
+            languagesUrl,
+            new ParameterizedTypeReference<>() {}
+        );
+        persistSources(repository, sourcesResponse.getBody());
+    }
 
-                final List<Repository> repositories = repositoriesResponse
-                    .getBody()
-                    .stream()
-                    .map(webRepository -> {
-                        final Repository repository = repositoryRepository
-                            .findByName(webRepository.getName())
-                            .orElseGet(() -> Repository.builder().name(webRepository.getName()).build());
-                        repository
-                            .getDevelopers()
-                            .add(
-                                developers
-                                    .stream()
-                                    .filter(developer -> developer.getLogin().equals(webDeveloper.getLogin()))
-                                    .findFirst()
-                                    .get()
-                            );
+    private void persistSources(final Repository repository, final Map<String, Long> webSources) {
+        final List<Source> sources = webSources
+            .entrySet()
+            .stream()
+            .map(webSource -> {
+                return Source
+                    .builder()
+                    .source(SourceId.builder().repository(repository).language(webSource.getKey()).build())
+                    .linesOfCode(webSource.getValue())
+                    .build();
+            })
+            .collect(Collectors.toList());
+        sourceRepository.saveAll(sources);
+    }
 
-                        return repository;
-                    })
-                    .collect(Collectors.toList());
-                repositoryRepository.saveAll(repositories);
-                //                        repositoriesResponse
-                //                            .getBody()
-                //                            .stream()
-                //                            .map(webRepository -> {
-                //                                final ResponseEntity<Map<String, Integer>> languagesResponse = new RestTemplate()
-                //                                    .exchange(
-                //                                        webDeveloper.getRepositoriesUrl(),
-                //                                        HttpMethod.GET,
-                //                                        null,
-                //                                        new ParameterizedTypeReference<>() {}
-                //                                    );
-                //
-                //                                return null;
-                //                            });
-
-            });
+    private <T> ResponseEntity<T> exchange(final String url, final ParameterizedTypeReference<T> typeReference) {
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth("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");
+        return new RestTemplate().exchange(url, HttpMethod.GET, new HttpEntity<>(null, headers), typeReference);
     }
 }
