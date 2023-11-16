@@ -29,6 +29,7 @@ public class TruncateService {
                 .map(name -> name.replaceAll("([a-z])([A-Z])", "$1_$2"))
                 .map(String::toLowerCase)
                 .collect(Collectors.toList());
+        tables.add("repository_developers");
     }
 
     @Transactional
