@@ -1,0 +1,12 @@
+@startuml context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+SHOW_PERSON_OUTLINE()
+
+Person(user, "User", "User of the system")
+System(githubDeveloperSkills, "Github Developer Skills", "Manages Github Developer Skills")
+System_Ext(github, "GitHub")
+
+Rel(user, githubDeveloperSkills, "Read data", "CLI / Web-Frontend")
+Rel(githubDeveloperSkills, github, "Fetch data", "REST API")
+@enduml

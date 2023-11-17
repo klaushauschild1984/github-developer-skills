@@ -1,0 +1,20 @@
+@startuml container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+SHOW_PERSON_OUTLINE()
+
+Person(user, "User", "User of the system")
+System_Boundary(c1, "Github Developer Skills") {
+    Container(cli, "CLI application", "Spring Boot, Picocli", "Handles user requests")
+    Container(db, "Database", "MySQL", "Stores data")
+    Container(dashboard, "Dashboard", "Metabase", "Displays data")
+}
+System_Ext(github, "GitHub")
+
+Rel(user, cli, "trigger 'fetch'", "command line")
+Rel(user, cli, "trigger 'query'", "command line")
+Rel(user, dashboard, "query data", "Web-Frontend")
+Rel(cli, db, "stores and queries data", "JDBC")
+Rel(dashboard, db, "queries data", "JDBC")
+Rel(cli, github, "Fetch data", "REST API")
+@enduml
