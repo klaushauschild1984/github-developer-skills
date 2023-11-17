@@ -2,11 +2,15 @@ package de.codecentric.github.developer.skills.service;
 
 import de.codecentric.github.developer.skills.repository.Developer;
 import de.codecentric.github.developer.skills.repository.DeveloperRepository;
+import de.codecentric.github.developer.skills.repository.DeveloperSource;
+import de.codecentric.github.developer.skills.repository.DeveloperSourceId;
+import de.codecentric.github.developer.skills.repository.DeveloperSourceRepository;
 import de.codecentric.github.developer.skills.repository.Repository;
 import de.codecentric.github.developer.skills.repository.RepositoryRepository;
 import de.codecentric.github.developer.skills.repository.Source;
 import de.codecentric.github.developer.skills.repository.SourceId;
 import de.codecentric.github.developer.skills.repository.SourceRepository;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,25 +29,31 @@ public class FetchService {
     private final DeveloperRepository developerRepository;
     private final RepositoryRepository repositoryRepository;
     private final SourceRepository sourceRepository;
+    private final DeveloperSourceRepository developerSourceRepository;
     private final String token;
 
     public FetchService(
         final DeveloperRepository developerRepository,
         final RepositoryRepository repositoryRepository,
         final SourceRepository sourceRepository,
+        final DeveloperSourceRepository developerSourceRepository,
         @Value("${commands.fetch.token}") final String token
     ) {
         this.developerRepository = developerRepository;
         this.repositoryRepository = repositoryRepository;
         this.sourceRepository = sourceRepository;
+        this.developerSourceRepository = developerSourceRepository;
         this.token = token;
     }
 
     public void fetch(final String membersUrl) {
         final Map<String, List<WebDeveloper>> webDevelopers = fetchDevelopers(membersUrl);
+        System.out.println(String.format("Fetching %s developers...", webDevelopers.size()));
         final List<Developer> developers = persistDevelopers(webDevelopers);
         developers.forEach(developer -> {
+            System.out.println(String.format("  processing %s", developer.getLogin()));
             fetchRepositories(developer, webDevelopers.get(developer.getLogin()).get(0).getRepositoriesUrl());
+            analyseDeveloper(developer);
         });
     }
 
@@ -113,6 +123,33 @@ public class FetchService {
             })
             .collect(Collectors.toList());
         sourceRepository.saveAll(sources);
+    }
+
+    private void analyseDeveloper(final Developer developer) {
+        final Map<String, Long> languages = new HashMap<>();
+        developer
+            .getRepositories()
+            .forEach(repository -> {
+                sourceRepository
+                    .findByRepository(repository)
+                    .forEach(source -> {
+                        final String language = source.getSource().getLanguage();
+                        final long count = languages.getOrDefault(language, 0L);
+                        languages.put(language, count + 1);
+                    });
+            });
+        final List<DeveloperSource> developerSources = languages
+            .entrySet()
+            .stream()
+            .map(entry ->
+                DeveloperSource
+                    .builder()
+                    .developerSource(DeveloperSourceId.builder().developer(developer).language(entry.getKey()).build())
+                    .numberOfProjects(entry.getValue())
+                    .build()
+            )
+            .collect(Collectors.toList());
+        developerSourceRepository.saveAll(developerSources);
     }
 
     private <T> ResponseEntity<T> exchange(final String url, final ParameterizedTypeReference<T> typeReference) {

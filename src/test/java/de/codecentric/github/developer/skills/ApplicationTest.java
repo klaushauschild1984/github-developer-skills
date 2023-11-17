@@ -56,6 +56,6 @@ class ApplicationTest {
 
     @Test
     void queryForSpecificLanguage() {
-        Application.main(new String[] { "query", "-language", "Java" });
+        Application.main(new String[] { "query", "-language", "Kotlin" });
     }
 }

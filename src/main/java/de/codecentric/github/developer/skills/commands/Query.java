@@ -1,12 +1,13 @@
 package de.codecentric.github.developer.skills.commands;
 
 import de.codecentric.github.developer.skills.repository.Developer;
-import de.codecentric.github.developer.skills.repository.DeveloperRepository;
-import de.codecentric.github.developer.skills.repository.SourceRepository;
-import java.util.HashMap;
+import de.codecentric.github.developer.skills.repository.DeveloperSource;
+import de.codecentric.github.developer.skills.repository.DeveloperSourceRepository;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import picocli.CommandLine;
@@ -26,42 +27,69 @@ class Query implements Callable<Integer> {
     @CommandLine.Option(names = "-language", description = "Restrict output to a specific language")
     private String restrictedLanguage;
 
-    private final DeveloperRepository developerRepository;
-    private final SourceRepository sourceRepository;
+    private final DeveloperSourceRepository developerSourceRepository;
 
     @Override
     public Integer call() {
-        final List<Developer> developers = getDevelopers();
-        developers.forEach(developer -> {
-            System.out.println(String.format("- %s", developer.getLogin()));
-            final Map<String, Long> languages = new HashMap<>();
-            developer
-                .getRepositories()
-                .forEach(repository -> {
-                    sourceRepository
-                        .findByRepository(repository)
-                        .forEach(source -> {
-                            final String language = source.getSource().getLanguage();
-                            final long count = languages.getOrDefault(language, 0L);
-                            languages.put(language, count + 1);
-                        });
-                });
-            languages
-                .entrySet()
+        final Map<Developer, List<DeveloperSource>> developers = getDevelopers();
+        if (restrictedLanguage != null) {
+            developers
+                .values()
                 .stream()
-                .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
-                .forEach(entry -> {
-                    System.out.println(String.format("    %s: %s", entry.getKey(), entry.getValue()));
-                });
-            System.out.println();
-        });
+                .flatMap(List::stream)
+                .sorted(Comparator.comparing(DeveloperSource::getNumberOfProjects).reversed())
+                .forEach(developerSource ->
+                    printDeveloper(developerSource.getDeveloperSource().getDeveloper(), List.of(developerSource))
+                );
+        } else {
+            developers.forEach(Query::printDeveloper);
+        }
         return 0;
     }
 
-    private List<Developer> getDevelopers() {
+    private static void printDeveloper(final Developer developer, final List<DeveloperSource> sources) {
+        System.out.println(String.format("- %s", developer.getLogin()));
+        sources.forEach(developerSource -> {
+            System.out.println(
+                String.format(
+                    "    %s: %s",
+                    developerSource.getDeveloperSource().getLanguage(),
+                    developerSource.getNumberOfProjects()
+                )
+            );
+        });
+        System.out.println();
+    }
+
+    private Map<Developer, List<DeveloperSource>> getDevelopers() {
         if (restrictedDeveloper != null) {
-            return developerRepository.findByLoginStartsWith(restrictedDeveloper);
+            return developerSourceRepository
+                .findAllByOrderByNumberOfProjectsDesc()
+                .stream()
+                .filter(developerSource ->
+                    developerSource.getDeveloperSource().getDeveloper().getLogin().equals(restrictedDeveloper)
+                )
+                .sorted(
+                    Comparator.comparing(developerSource ->
+                        developerSource.getDeveloperSource().getDeveloper().getLogin()
+                    )
+                )
+                .collect(Collectors.groupingBy(developerSource -> developerSource.getDeveloperSource().getDeveloper()));
         }
-        return developerRepository.findAllByOrderByLoginAsc();
+        if (restrictedLanguage != null) {
+            return developerSourceRepository
+                .findAllByOrderByNumberOfProjectsDesc()
+                .stream()
+                .filter(developerSource -> developerSource.getDeveloperSource().getLanguage().equals(restrictedLanguage)
+                )
+                .collect(Collectors.groupingBy(developerSource -> developerSource.getDeveloperSource().getDeveloper()));
+        }
+        return developerSourceRepository
+            .findAllByOrderByNumberOfProjectsDesc()
+            .stream()
+            .sorted(
+                Comparator.comparing(developerSource -> developerSource.getDeveloperSource().getDeveloper().getLogin())
+            )
+            .collect(Collectors.groupingBy(developerSource -> developerSource.getDeveloperSource().getDeveloper()));
     }
 }

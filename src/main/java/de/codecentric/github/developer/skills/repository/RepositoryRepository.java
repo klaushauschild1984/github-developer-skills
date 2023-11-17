@@ -6,6 +6,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface RepositoryRepository
-    extends JpaRepository<de.codecentric.github.developer.skills.repository.Repository, String> {
-    Optional<de.codecentric.github.developer.skills.repository.Repository> findByName(String name);
-}
+    extends JpaRepository<de.codecentric.github.developer.skills.repository.Repository, String> {}
