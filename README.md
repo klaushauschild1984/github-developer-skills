@@ -8,6 +8,8 @@ Coding test for my application for [codecentric](https://www.codecentric.de/) in
   * Java 11
   * Maven
   * IntelliJ Idea Community Edition
+  * Docker
+  * MySQL
   * Metabase
 * Libraries
   * Spring Boot 2.7
